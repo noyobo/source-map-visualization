@@ -36,6 +36,12 @@
     </section>
     <section>
       <h2>Generated&nbsp;code</h2>
+      <div>
+          <span>Position:</span>
+          <input id="position" placeholder="line:col" pattern="[\:0-9]+" />
+          <button id="goToPosition">Go</button>
+          <span id="positionError" style="color: #f35151; font-weight: 700"></span>
+      </div>
     </section>
   </div>
   <div id="statusBar">
@@ -64,6 +70,7 @@
   <div id="progressBar">
     <div class="progress"></div>
   </div>
+  <script src="main.js"></script>
   <script src="code.js"></script>
 </body>
 
