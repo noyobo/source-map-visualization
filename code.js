@@ -2,6 +2,20 @@
   ////////////////////////////////////////////////////////////////////////////////
   // Dragging
 
+  function normalizePath(path) {
+    const colIndex =  path.indexOf(':')
+    if (colIndex > -1) {
+      path = path.slice(colIndex + 1)
+    }
+    const parts = path.split(/[\/\\]/g);
+    const normalized = [];
+    for (const part of parts) {
+      if (part === '..') normalized.pop();
+      else if (part !== '.') normalized.push(part);
+    }
+    return normalized.join('/');
+  }
+
   const dragTarget = document.getElementById('dragTarget');
   const uploadFiles = document.getElementById('uploadFiles');
   const loadExample = document.getElementById('loadExample');
@@ -722,7 +736,9 @@
     if (sm.sources.length > 0) {
       for (let sources = sm.sources, i = 0, n = sources.length; i < n; i++) {
         const option = document.createElement('option');
-        option.textContent = `${i}: ${sources[i].name}`;
+        const sourceName = sources[i].name
+        option.textContent = `${i}: ${normalizePath(sourceName)}`;
+
         fileList.appendChild(option);
       }
       fileList.disabled = false;
@@ -1914,7 +1930,7 @@
           } else {
             status = `Line ${hoveredMapping.originalLine + 1}, Offset ${hoveredMapping.originalColumn}`;
             if (hoveredMapping.originalSource !== sourceIndex) {
-              status += ` in ${otherSource(hoveredMapping.originalSource)}`;
+              status += ` in ${normalizePath(otherSource(hoveredMapping.originalSource))}`;
             }
           }
         }
