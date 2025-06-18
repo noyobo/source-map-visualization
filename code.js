@@ -62,7 +62,14 @@
   };
 
   loadExample.onclick = () => {
-    finishLoading(exampleJS, exampleMap);
+    const positionInput = document.getElementById('position');
+    positionInput.value = '10:24';
+    finishLoading(exampleJS, exampleMap).then(() => {
+      requestAnimationFrame(() => {
+        const btn = document.getElementById('goToPosition');
+        btn.dispatchEvent(new MouseEvent('click'));
+      });
+    });
   };
 
   ////////////////////////////////////////////////////////////////////////////////
