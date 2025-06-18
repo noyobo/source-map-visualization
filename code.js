@@ -2,6 +2,20 @@
   ////////////////////////////////////////////////////////////////////////////////
   // Dragging
 
+  function normalizePath(path) {
+    const colIndex = path.indexOf(':');
+    if (colIndex > -1) {
+      path = path.slice(colIndex + 1);
+    }
+    const parts = path.split(/[\/\\]/g);
+    const normalized = [];
+    for (const part of parts) {
+      if (part === '..') normalized.pop();
+      else if (part !== '.') normalized.push(part);
+    }
+    return normalized.join('/');
+  }
+
   const dragTarget = document.getElementById('dragTarget');
   const uploadFiles = document.getElementById('uploadFiles');
   const loadExample = document.getElementById('loadExample');
@@ -722,7 +736,9 @@
     if (sm.sources.length > 0) {
       for (let sources = sm.sources, i = 0, n = sources.length; i < n; i++) {
         const option = document.createElement('option');
-        option.textContent = `${i}: ${sources[i].name}`;
+        const sourceName = sources[i].name;
+        option.textContent = `${i}: ${normalizePath(sourceName)}`;
+
         fileList.appendChild(option);
       }
       fileList.disabled = false;
@@ -797,6 +813,10 @@
   let originalTextArea;
   let generatedTextArea;
   let hover = null;
+
+  window.getOriginalTextArea = function () {
+    return originalTextArea;
+  };
 
   const wrapCheckbox = document.getElementById('wrap');
   let wrap = true;
@@ -1099,6 +1119,7 @@
       c.font = '14px monospace';
       const columnWidth = c.measureText(' '.repeat(64)).width / 64;
       const columnsAcross = computeColumnsAcross(width, columnWidth);
+
       const wrappedRows = wrappedRowsForColumns(columnsAcross);
 
       let scrollbarX = null;
@@ -1274,8 +1295,8 @@
           startIndex > endOfLineIndex
             ? startIndex
             : hasTrailingNewline && startIndex < beforeNewlineIndex
-            ? beforeNewlineIndex
-            : endOfLineIndex;
+              ? beforeNewlineIndex
+              : endOfLineIndex;
         let isLastMappingInLine = false;
 
         // Ignore subsequent duplicate mappings
@@ -1419,17 +1440,16 @@
         const line = lines[row];
         if (!line) return;
         if (column > line.length) return;
-        const { columnWidth, columnsAcross, wrappedRows } = computeScrollbarsAndClampScroll();
+
         if (column >= 0) {
           if (row >= 0) {
-            // Adjust the mouse column due to line wrapping
-            const lineIndex = lineIndexForRow(wrappedRows, row);
-            const firstColumn = column;
+            const roundedColumn = Math.round(column);
+            const flooredColumn = Math.floor(column);
+            const fractionalColumn = column;
+            const lineIndex = row;
             const lastColumn = column + 1;
-            const fractionalColumn = firstColumn;
-            const roundedColumn = lastColumn;
+            const firstColumn = column;
 
-            const flooredColumn = Math.floor(fractionalColumn);
             const { index: snappedRoundedIndex, column: snappedRoundedColumn } = analyzeLine(
               lineIndex,
               roundedColumn,
@@ -1500,6 +1520,7 @@
               roundedColumn += firstColumn;
 
               const flooredColumn = Math.floor(fractionalColumn);
+
               const { index: snappedRoundedIndex, column: snappedRoundedColumn } = analyzeLine(
                 lineIndex,
                 roundedColumn,
@@ -1534,7 +1555,6 @@
                   originalName: mappings[firstMapping + 5],
                 };
               }
-
               hover = {
                 sourceIndex,
                 lineIndex,
@@ -1690,12 +1710,12 @@
                 text = runText[i] = !whitespace
                   ? raw.slice(run_startIndex(run), run_endIndex(run))
                   : whitespace === 0x20 /* space */
-                  ? '·'.repeat(run_endIndex(run) - run_startIndex(run))
-                  : whitespace === 0x0a /* newline */
-                  ? lineIndex === lines.length - 1
-                    ? '∅'
-                    : '↵'
-                  : '→' /* tab */;
+                    ? '·'.repeat(run_endIndex(run) - run_startIndex(run))
+                    : whitespace === 0x0a /* newline */
+                      ? lineIndex === lines.length - 1
+                        ? '∅'
+                        : '↵'
+                      : '→' /* tab */;
               }
 
               // Limit the run to the visible columns (but only for ASCII runs)
@@ -1747,11 +1767,11 @@
                     // an exact match.
                     matchesGenerated || matchesOriginal
                   : // If this is on the same pane as the mouse, only show the exact
-                  // mapping instead of showing everything that matches the target
-                  // so hovering isn't confusing.
-                  isGenerated
-                  ? matchesGenerated
-                  : matchesOriginal);
+                    // mapping instead of showing everything that matches the target
+                    // so hovering isn't confusing.
+                    isGenerated
+                    ? matchesGenerated
+                    : matchesOriginal);
               if (isGenerated && matchesGenerated && hoveredMapping.originalName !== -1 && !hoveredName) {
                 hoveredName = {
                   text: originalName(hoveredMapping.originalName),
@@ -1914,7 +1934,7 @@
           } else {
             status = `Line ${hoveredMapping.originalLine + 1}, Offset ${hoveredMapping.originalColumn}`;
             if (hoveredMapping.originalSource !== sourceIndex) {
-              status += ` in ${otherSource(hoveredMapping.originalSource)}`;
+              status += ` in ${normalizePath(otherSource(hoveredMapping.originalSource))}`;
             }
           }
         }
